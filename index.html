@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="theme-color" content="#0d0d0d"/>
-  <title>TIMELOG v10</title>
+  <title>TIMELOG v11</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -235,10 +235,20 @@ async function confirmAndLog(){
   setScreen("loading");
   const m=S.match;
   let stages=[],err="";
-  try{
-    const d=await apiGet(`/Projects/${m.projectId}/Stages?criteria.pagesize=100`);
-    stages=(d.items||d||[]).filter(s=>s.id&&Number(s.id)>0);
-  }catch(e){err=e.message;}
+  const stagePaths=[
+    `/Projects/${m.projectId}/Stages?criteria.pagesize=100`,
+    `/Projects/${m.projectId}/Stages`,
+    `/Stages?criteria.projectId=${m.projectId}&criteria.pagesize=100`,
+    `/Projects/${m.projectId}/SubProjects?criteria.pagesize=100`,
+  ];
+  for(const path of stagePaths){
+    try{
+      const d=await apiGet(path);
+      const sl=(d.items||d.data||d.subProjects||(Array.isArray(d)?d:[])).filter(s=>s.id&&Number(s.id)>0);
+      if(sl.length>0){stages=sl;break;}
+      err+=`[empty] ${path} | `;
+    }catch(e){err+=`[${e.message.slice(0,50)}] ${path} | `;}
+  }
   if(stages.length===0){S.errorMsg=`Could not load stages.\n${err}\nProjectId: ${m.projectId}`;setScreen("error");return;}
   S.stages=stages;setScreen("stagepick");
 }
