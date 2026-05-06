@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="theme-color" content="#0d0d0d"/>
+  <title>TIMELOG v10</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:#0d0d0d;color:#e8e2d9;font-family:'DM Mono',monospace;overflow-x:hidden}
+    button{font-family:'DM Mono',monospace}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:0.7}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes ripple{0%{transform:scale(1);opacity:0.6}100%{transform:scale(2.5);opacity:0}}
+    #app{min-height:100vh;display:flex;flex-direction:column}
+    header{border-bottom:1px solid #222;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0d0d0d;z-index:10}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:0.15em;color:#f5e642}
+    .subhead{font-size:10px;color:#555;letter-spacing:0.08em;margin-top:2px}
+    .hist-btn{background:transparent;border:1px solid #222;border-radius:4px;color:#666;font-size:11px;padding:6px 14px;cursor:pointer;letter-spacing:0.08em}
+    main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 80px;max-width:600px;margin:0 auto;width:100%}
+    .screen{width:100%;text-align:center;animation:fadeUp 0.35s ease}
+    .screen.left{text-align:left}
+    .perm-banner{background:#161616;border:1px solid #2a2a2a;border-left:3px solid #f5e642;border-radius:6px;padding:16px 20px;margin-bottom:28px;text-align:left}
+    .perm-banner.denied{background:#1a0a0a;border-color:#e04040;border-left-color:#e04040}
+    .perm-title{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:#f5e642;letter-spacing:0.08em;margin-bottom:8px}
+    .perm-title.denied{color:#e04040}
+    .perm-text{font-size:12px;color:#666;line-height:1.7;margin-bottom:14px}
+    .allow-btn{padding:10px 20px;background:#f5e642;border:none;border-radius:4px;color:#0d0d0d;font-family:'Syne',sans-serif;font-weight:800;font-size:11px;letter-spacing:0.1em;cursor:pointer}
+    .mic-wrap{position:relative;display:inline-block;margin-bottom:32px}
+    .mic-btn{width:140px;height:140px;border-radius:50%;background:#f5e642;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;box-shadow:0 0 0 8px rgba(245,230,66,0.1);transition:all 0.2s;position:relative;z-index:1}
+    .mic-btn:disabled{background:#1a1a1a;box-shadow:none;cursor:not-allowed}
+    .mic-label{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:#0d0d0d;letter-spacing:0.1em}
+    .mic-btn:disabled .mic-label{color:#444}
+    .hint{color:#3a3a3a;font-size:12px;line-height:1.8;letter-spacing:0.04em}
+    .proj-count{color:#666;font-size:13px;margin-bottom:32px}
+    .ring{position:absolute;inset:0;border-radius:50%;border:2px solid #f5e642;animation:ripple 2s ease-out infinite;pointer-events:none}
+    .stop-btn{width:140px;height:140px;border-radius:50%;background:#1a0a0a;border:3px solid #e04040;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;position:relative;z-index:1}
+    .stop-square{width:24px;height:24px;border-radius:4px;background:#e04040;animation:pulse 1s infinite}
+    .stop-label{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:#e04040;letter-spacing:0.1em}
+    .listening-label{color:#f5e642;font-size:14px;margin-bottom:12px;letter-spacing:0.06em}
+    .interim{color:#666;font-size:13px;min-height:48px;line-height:1.6;font-style:italic;max-width:320px;margin:0 auto}
+    .spinner{width:60px;height:60px;border-radius:50%;border:3px solid #222;border-top-color:#f5e642;animation:spin 1s linear infinite;margin:0 auto 32px}
+    .thinking-label{color:#f5e642;font-size:13px;letter-spacing:0.1em;margin-bottom:12px}
+    .thinking-quote{color:#666;font-size:12px;font-style:italic;max-width:320px;line-height:1.6;margin:0 auto}
+    .section-label{font-size:11px;color:#555;letter-spacing:0.12em;margin-bottom:16px}
+    .quote-box{background:#131313;border:1px solid #222;border-radius:6px;padding:14px 18px;margin-bottom:24px;font-style:italic;color:#aaa;font-size:13px;line-height:1.6;text-align:left}
+    .match-card{background:#131313;border:1px solid #222;border-left:3px solid #f5e642;border-radius:6px;padding:20px 18px;margin-bottom:28px}
+    .match-row{display:flex;gap:16px;margin-bottom:12px;align-items:flex-start}
+    .match-row:last-child{margin-bottom:0}
+    .match-key{font-size:10px;color:#555;letter-spacing:0.1em;min-width:64px;padding-top:1px}
+    .match-val{font-size:13px;color:#e8e2d9;flex:1;line-height:1.5}
+    .low-conf{margin-top:12px;font-size:11px;color:#e09040;letter-spacing:0.06em}
+    .btn-row{display:flex;gap:10px}
+    .btn{flex:1;padding:14px;background:transparent;border:1px solid #222;border-radius:4px;color:#666;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.1em;cursor:pointer}
+    .btn.primary{flex:2;background:#f5e642;border:none;color:#0d0d0d;font-weight:800}
+    .stage-btn{background:#131313;border:1px solid #2a2a2a;border-radius:4px;color:#e8e2d9;font-family:'DM Mono',monospace;font-size:13px;padding:14px 16px;text-align:left;cursor:pointer;width:100%;margin-bottom:8px;display:block}
+    .big-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;font-size:32px}
+    .big-icon.ok{background:rgba(245,230,66,0.1);border:2px solid #f5e642}
+    .big-icon.err{background:rgba(224,64,64,0.1);border:2px solid #e04040}
+    .success-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#f5e642;letter-spacing:0.1em;margin-bottom:12px}
+    .success-sub{color:#666;font-size:13px;margin-bottom:8px}
+    .err-title{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#e04040;letter-spacing:0.1em;margin-bottom:16px}
+    .err-msg{color:#666;font-size:12px;margin-bottom:32px;line-height:1.7;word-break:break-word;max-width:360px;margin-left:auto;margin-right:auto}
+    .solo-btn{padding:14px 32px;background:#f5e642;border:none;border-radius:4px;color:#0d0d0d;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:0.1em;cursor:pointer}
+    .hist-card{background:#131313;border:1px solid #222;border-radius:6px;padding:14px 16px;margin-bottom:10px}
+    .hist-top{display:flex;justify-content:space-between;margin-bottom:6px}
+    .hist-time{font-size:11px;color:#f5e642}
+    .hist-hrs{font-size:11px;color:#555}
+    .hist-proj{font-size:13px;color:#e8e2d9;margin-bottom:4px}
+    .hist-stage{font-size:11px;color:#555}
+    .hist-note{font-size:11px;color:#444;margin-top:6px;font-style:italic}
+    .empty{color:#444;font-size:13px;font-style:italic}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <div class="logo">TIMELOG <span style="font-size:10px;opacity:0.4">v10</span></div>
+      <div class="subhead" id="dateLabel"></div>
+    </div>
+    <button class="hist-btn" id="histBtn" onclick="toggleHistory()">HISTORY</button>
+  </header>
+  <main id="main"></main>
+</div>
+<script>
+const STAFF_ID = 7808683;
+const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVkd2FyZEB0aHJpdmVhcmNoaXRlY3R1cmUuY29tLmF1IiwiYXBwbGljYXRpb25pZCI6MCwidXNlcm5hbWUiOiJFZHdhcmRIaWdodG9uIiwidGVuYW50IjoiIiwiY29kZV9leHBpcmVzIjo2Mzk0MzExNjUzOTAwMDUxNTksInVzZXJfdHlwZSI6IjIifQ.EXIR-TZ1CEY8Vosk36Xp4TIH2JLBtFfsd7Cg-3EfaM8";
+const BASE = "https://api.totalsynergy.com/api/v2/Organisation/thrivearchitecture";
+const PROXY = "https://corsproxy.io/?";
+
+const fmt = d=>d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+const fmtDate = d=>d.toLocaleDateString([],{weekday:"long",month:"long",day:"numeric"});
+const todayInt = ()=>{ const d=new Date(); return parseInt(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`); };
+
+document.getElementById("dateLabel").textContent = `Thrive Architecture · ${fmtDate(new Date())}`;
+
+async function apiGet(path) {
+  const r = await fetch(PROXY+encodeURIComponent(BASE+path), {
+    headers:{"access-token":TOKEN,"Content-Type":"application/json","x-requested-with":"XMLHttpRequest"}
+  });
+  if (!r.ok) throw new Error(`${r.status}: ${(await r.text()).slice(0,200)}`);
+  return r.json();
+}
+
+async function apiPost(path, data) {
+  // Strip zero/null IDs before sending
+  const clean = data.map(e=>{
+    const o={};
+    for(const[k,v] of Object.entries(e)){
+      if(v===null||v===undefined) continue;
+      if(typeof v==="number"&&v<=0&&k!=="units") continue;
+      o[k]=v;
+    }
+    return o;
+  });
+  const r = await fetch(PROXY+encodeURIComponent(BASE+path), {
+    method:"POST",
+    headers:{"access-token":TOKEN,"Content-Type":"application/json","x-requested-with":"XMLHttpRequest"},
+    body:JSON.stringify(clean)
+  });
+  const txt = await r.text();
+  if (!r.ok) throw new Error(`${r.status}: ${txt.slice(0,300)}`);
+  return JSON.parse(txt);
+}
+
+let S = {
+  screen:"idle", projects:[], loadingProjects:true, projectsErr:"",
+  micPermission:"unknown", transcript:"", interimText:"",
+  match:null, stages:[], errorMsg:"", history:[], recognition:null
+};
+
+async function init() {
+  loadHistory(); checkMicPermission(); await loadProjects(); render();
+}
+
+async function loadProjects() {
+  S.loadingProjects=true; S.projectsErr="";
+  try {
+    const d = await apiGet("/Projects?criteria.pagesize=200&criteria.isActive=true");
+    const list = d.items||d.data||(Array.isArray(d)?d:[]);
+    S.projects = list.map(p=>({id:p.id||p.projectId,name:p.name||p.display||p.projectName||"(unnamed)",...p}));
+  } catch(e) {
+    S.projectsErr = e.message;
+  }
+  S.loadingProjects=false; render();
+}
+
+function loadHistory() { try{S.history=JSON.parse(localStorage.getItem("th-hist")||"[]");}catch{} }
+function saveHistory(e) { S.history=[e,...S.history].slice(0,50); try{localStorage.setItem("th-hist",JSON.stringify(S.history));}catch{} }
+
+async function checkMicPermission() {
+  try { const r=await navigator.permissions.query({name:"microphone"}); S.micPermission=r.state; r.onchange=()=>{S.micPermission=r.state;render();}; } catch{S.micPermission="unknown";}
+  render();
+}
+
+async function requestMicPermission() {
+  try { const s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); S.micPermission="granted"; render(); }
+  catch { S.micPermission="denied"; S.errorMsg="Microphone denied. In Chrome tap 🔒 → Site settings → Microphone → Allow, then reload."; setScreen("error"); }
+}
+
+function startListening() {
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){S.errorMsg="Voice not supported. Use Chrome.";setScreen("error");return;}
+  S.transcript="";S.interimText="";setScreen("listening");
+  const r=new SR(); r.lang="en-AU";r.interimResults=true;r.continuous=false; S.recognition=r;
+  r.onend=()=>{S.interimText="";render();};
+  r.onerror=e=>{S.interimText="";S.errorMsg=e.error==="not-allowed"?"Mic denied. Allow and try again.":`Voice error: ${e.error}`;setScreen("error");};
+  r.onresult=e=>{
+    let interim="",final="";
+    for(const res of e.results){if(res.isFinal)final+=res[0].transcript;else interim+=res[0].transcript;}
+    S.interimText=interim;render();
+    if(final){S.transcript=final;S.interimText="";r.stop();matchProject(final);}
+  };
+  r.start();
+}
+
+function stopListening(){S.recognition?.stop();setScreen("idle");}
+
+function tokenise(str){return(str||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>1&&!["the","and","for","with","on","at","of","to","a","an","in","i","my","been","have","was","working","doing","spent","did","ive","its","im"].includes(w));}
+
+function scoreMatch(tokens,name){
+  const pt=tokenise(name);let score=0;
+  for(const t of tokens)for(const p of pt){
+    if(p===t)score+=10;
+    else if(p.startsWith(t)&&t.length>2)score+=6;
+    else if(t.startsWith(p)&&p.length>2)score+=6;
+    else if(p.includes(t)&&t.length>3)score+=3;
+  }
+  return score;
+}
+
+function extractHours(text){
+  const t=text.toLowerCase();
+  const hm=t.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s*(?:and\s*)?(\d+)\s*(?:minutes?|mins?)/);
+  if(hm)return Math.round((parseFloat(hm[1])+parseFloat(hm[2])/60)*4)/4;
+  const min=t.match(/(\d+(?:\.\d+)?)\s*(?:minutes?|mins?)/);
+  if(min)return Math.round((parseFloat(min[1])/60)*4)/4;
+  const hr=t.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)/);
+  if(hr)return parseFloat(hr[1]);
+  const wm={"one and a half":1.5,"two and a half":2.5,"an hour and a half":1.5,"half an hour":0.5,"a couple of hours":2,"couple of hours":2,"half":0.5,"quarter":0.25,"one":1,"two":2,"three":3,"four":4,"five":5,"six":6};
+  for(const[p,v]of Object.entries(wm).sort((a,b)=>b[0].length-a[0].length)){
+    const re=new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*(hours?|hrs?)?","i");
+    const m=t.match(re);if(m&&(p.includes("hour")||m[1]))return v;
+  }
+  const lm=t.match(/(?:last|past)\s+(\w[\w\s]*?)\s+hours?/);
+  if(lm){const n={"one":1,"two":2,"three":3,"four":4,"five":5,"half":0.5,"couple":2,"few":3}[lm[1].trim()];if(n)return n;}
+  return 1;
+}
+
+function extractStage(text){
+  const t=text.toLowerCase();
+  const map=[[["documentation","doc","docs","drawings","plans","specifications"],"Documentation"],[["design","concept","schematic","dd","sd"],"Design"],[["construction","ca","site"],"Construction"],[["administration","admin","email","emails","management"],"Administration"],[["planning","council","approval","permit","da"],"Planning"],[["meeting","meetings","discussion"],"Meetings"]];
+  for(const[keys,label]of map)if(keys.some(k=>t.includes(k)))return label;
+  return "Administration";
+}
+
+function matchProject(text){
+  setScreen("thinking");
+  setTimeout(()=>{
+    const tokens=tokenise(text);
+    let best=null,bestScore=0;
+    for(const p of S.projects){const score=scoreMatch(tokens,p.name);if(score>bestScore){bestScore=score;best=p;}}
+    if(!best){S.errorMsg="Could not match any project. Try saying the project name more clearly.";setScreen("error");return;}
+    S.match={projectId:best.id,projectName:best.name,stageName:extractStage(text),hours:extractHours(text),note:text.charAt(0).toUpperCase()+text.slice(1),confidence:bestScore>=10?"high":bestScore>=4?"medium":"low"};
+    setScreen("confirm");
+  },400);
+}
+
+async function confirmAndLog(){
+  setScreen("loading");
+  const m=S.match;
+  let stages=[],err="";
+  try{
+    const d=await apiGet(`/Projects/${m.projectId}/Stages?criteria.pagesize=100`);
+    stages=(d.items||d||[]).filter(s=>s.id&&Number(s.id)>0);
+  }catch(e){err=e.message;}
+  if(stages.length===0){S.errorMsg=`Could not load stages.\n${err}\nProjectId: ${m.projectId}`;setScreen("error");return;}
+  S.stages=stages;setScreen("stagepick");
+}
+
+function selectStage(id){postTimesheet(Number(id));}
+
+async function postTimesheet(stageId){
+  setScreen("logging");
+  const m=S.match;
+  const entry={staff_Id:STAFF_ID,dateAsInt:todayInt(),projectId:m.projectId,units:m.hours,note:m.note};
+  if(stageId&&stageId>0)entry.stageId=stageId;
+  try{
+    const results=await apiPost("/Transactions/CreateTimesheetEntry",[entry]);
+    const first=Array.isArray(results)?results[0]:results;
+    if(first&&first.success===false){S.errorMsg="Rejected: "+first.errorMessage;setScreen("error");return;}
+    saveHistory({id:Date.now(),time:fmt(new Date()),date:fmtDate(new Date()),projectName:m.projectName,stageName:S.stages.find(s=>s.id===stageId)?.name||"",hours:m.hours,note:m.note});
+    setScreen("success");
+  }catch(e){S.errorMsg="Failed: "+e.message;setScreen("error");}
+}
+
+function setScreen(s){S.screen=s;render();}
+function reset(){S.match=null;S.transcript="";S.errorMsg="";setScreen("idle");}
+function toggleHistory(){setScreen(S.screen==="history"?"idle":"history");}
+
+function render(){
+  document.getElementById("histBtn").textContent=S.screen==="history"?"← BACK":"HISTORY";
+  const main=document.getElementById("main");
+  const s=S.screen;
+  const notGranted=S.micPermission!=="granted";
+  const denied=S.micPermission==="denied";
+
+  if(s==="idle"){
+    const disabled=S.loadingProjects||denied;
+    main.innerHTML=`<div class="screen">
+      <div class="proj-count">${S.loadingProjects?"Loading projects…":S.projectsErr?`<span style="color:#e04040">Error: ${S.projectsErr}</span>`:`${S.projects.length} projects loaded`}</div>
+      ${(!denied&&notGranted)?`<div class="perm-banner"><div class="perm-title">🎤 MICROPHONE ACCESS NEEDED</div><div class="perm-text">Tap below to allow microphone access.</div><button class="allow-btn" onclick="requestMicPermission()">ALLOW MICROPHONE</button></div>`:""}
+      ${denied?`<div class="perm-banner denied"><div class="perm-title denied">🎤 MICROPHONE BLOCKED</div><div class="perm-text" style="margin-bottom:0">Tap 🔒 in Chrome address bar → Site settings → Microphone → Allow, then reload.</div></div>`:""}
+      <div class="mic-wrap">
+        <button class="mic-btn" ${disabled?"disabled":""} onclick="${notGranted&&!denied?"requestMicPermission()":"startListening()"}">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${disabled?"#444":"#0d0d0d"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span class="mic-label">${notGranted&&!denied?"ALLOW":"SPEAK"}</span>
+        </button>
+      </div>
+      <div class="hint">Tap and tell me what you've been working on.</div>
+    </div>`;
+  }
+  else if(s==="listening"){
+    main.innerHTML=`<div class="screen">
+      <div class="mic-wrap">
+        <div class="ring" style="animation-delay:0s"></div>
+        <div class="ring" style="animation-delay:0.5s"></div>
+        <div class="ring" style="animation-delay:1s"></div>
+        <button class="stop-btn" onclick="stopListening()"><div class="stop-square"></div><span class="stop-label">STOP</span></button>
+      </div>
+      <div class="listening-label">Listening…</div>
+      <div class="interim">${S.interimText||"Speak now"}</div>
+    </div>`;
+  }
+  else if(s==="thinking"){
+    main.innerHTML=`<div class="screen"><div class="spinner"></div><div class="thinking-label">MATCHING TO PROJECTS</div><div class="thinking-quote">"${S.transcript}"</div></div>`;
+  }
+  else if(s==="confirm"&&S.match){
+    const m=S.match;
+    main.innerHTML=`<div class="screen left">
+      <div class="section-label">YOU SAID</div>
+      <div class="quote-box">"${S.transcript}"</div>
+      <div class="section-label">LOG THIS ENTRY?</div>
+      <div class="match-card">
+        ${[["PROJECT",m.projectName],["HOURS",m.hours+"h"],["NOTE",m.note.slice(0,80)]].map(([k,v])=>`<div class="match-row"><div class="match-key">${k}</div><div class="match-val">${v||"—"}</div></div>`).join("")}
+        ${m.confidence==="low"?`<div class="low-conf">⚠ Low confidence — please review</div>`:""}
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="reset()">CANCEL</button>
+        <button class="btn" onclick="startListening()">RE-SPEAK</button>
+        <button class="btn primary" onclick="confirmAndLog()">NEXT →</button>
+      </div>
+    </div>`;
+  }
+  else if(s==="loading"){
+    main.innerHTML=`<div class="screen"><div class="spinner"></div><div class="thinking-label">LOADING STAGES…</div></div>`;
+  }
+  else if(s==="stagepick"){
+    const m=S.match;
+    main.innerHTML=`<div class="screen left">
+      <div class="section-label" style="margin-bottom:4px">PROJECT</div>
+      <div style="font-size:14px;color:#e8e2d9;margin-bottom:4px">${m.projectName}</div>
+      <div style="font-size:11px;color:#555;margin-bottom:24px">${m.hours}h</div>
+      <div class="section-label" style="margin-bottom:12px">SELECT STAGE</div>
+      ${S.stages.map(st=>`<button class="stage-btn" onclick="selectStage(${st.id})">${st.name||st.display||"Stage "+st.id}</button>`).join("")}
+      <div style="margin-top:12px"><button class="btn" onclick="setScreen('confirm')">← BACK</button></div>
+    </div>`;
+  }
+  else if(s==="logging"){
+    main.innerHTML=`<div class="screen"><div class="spinner"></div><div class="thinking-label">POSTING TO TOTAL SYNERGY…</div></div>`;
+  }
+  else if(s==="success"){
+    const m=S.match;
+    main.innerHTML=`<div class="screen">
+      <div class="big-icon ok">✓</div>
+      <div class="success-title">LOGGED!</div>
+      <div class="success-sub">${m?.projectName||""}</div>
+      <div class="success-sub" style="margin-bottom:32px">${m?.hours||""}h logged successfully</div>
+      <button class="solo-btn" onclick="reset()">LOG ANOTHER</button>
+    </div>`;
+  }
+  else if(s==="error"){
+    main.innerHTML=`<div class="screen">
+      <div class="big-icon err">✕</div>
+      <div class="err-title">SOMETHING WENT WRONG</div>
+      <div class="err-msg">${S.errorMsg}</div>
+      <button class="solo-btn" onclick="reset()">TRY AGAIN</button>
+    </div>`;
+  }
+  else if(s==="history"){
+    main.innerHTML=`<div class="screen left">
+      <div class="section-label" style="margin-bottom:20px">RECENT ENTRIES</div>
+      ${S.history.length===0?`<div class="empty">No entries logged yet.</div>`:
+        S.history.map(e=>`<div class="hist-card">
+          <div class="hist-top"><div class="hist-time">${e.time} · ${e.date}</div><div class="hist-hrs">${e.hours}h</div></div>
+          <div class="hist-proj">${e.projectName}</div>
+          <div class="hist-stage">${e.stageName}</div>
+          ${e.note?`<div class="hist-note">${e.note.slice(0,80)}</div>`:""}
+        </div>`).join("")
+      }
+    </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
